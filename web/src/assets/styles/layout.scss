@@ -1,0 +1,158 @@
+/* Colors Base */
+:root {
+  --blog-bgc-light: #ffffff;
+  --blog-bgc-dark: #3c3c3c;
+  // --blog-bgc-dark: #3a3a3a;
+}
+/* Colors Theme */
+:root {
+  --blog-bgc: var(--blog-bgc-light);
+}
+/* Dark Mode Theme */
+.dark {
+  --blog-bgc: var(--blog-bgc-dark);
+}
+
+//自适应
+/*超小屏*/
+@media screen and (max-width: 479px) {
+  .container {
+    width: 95%;
+    margin: 0 auto;
+    background-color: var(--blog-bgc);
+    flex: 1 0 auto;
+  }
+
+  .nav-menu {
+    display: none !important;
+  }
+  .nav-menu-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  // main-container全局样式
+  .app-container {
+    padding: 8px;
+  }
+}
+/*xs->手机*/
+@media screen and (min-width: 480px) and (max-width: 767px) {
+  .container {
+    width: 95%;
+    margin: 0 auto;
+    background-color: var(--blog-bgc);
+    flex: 1 0 auto;
+  }
+
+  .nav-menu {
+    display: none !important;
+  }
+  .nav-menu-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  // main-container全局样式
+  .app-container {
+    padding: 8px;
+  }
+}
+/*sm->平板*/
+@media screen and (min-width: 768px) and (max-width: 959px) {
+  .container {
+    width: 90%;
+    margin: 0 auto;
+    background-color: var(--blog-bgc);
+    flex: 1 0 auto;
+  }
+
+  .nav-menu {
+    color: #2b2b2b;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .nav-menu-mobile {
+    display: none !important;
+  }
+
+  // main-container全局样式
+  .app-container {
+    padding: 10px;
+  }
+}
+/*md->桌面显示器*/
+@media screen and (min-width: 960px) and (max-width: 1199px) {
+  .container {
+    width: 90%;
+    margin: 0 auto;
+    background-color: var(--blog-bgc);
+    flex: 1 0 auto;
+  }
+
+  .nav-menu {
+    color: #2b2b2b;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .nav-menu-mobile {
+    display: none !important;
+  }
+
+  // main-container全局样式
+  .app-container {
+    padding: 10px;
+  }
+}
+/*lg->大屏*/
+@media screen and (min-width: 1200px) and (max-width: 1919px) {
+  .container {
+    width: 90%;
+    margin: 0 auto;
+    background-color: var(--blog-bgc);
+    flex: 1 0 auto;
+  }
+
+  .nav-menu {
+    color: #2b2b2b;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .nav-menu-mobile {
+    display: none !important;
+  }
+
+  // main-container全局样式
+  .app-container {
+    padding: 10px;
+  }
+}
+/*xl->大屏*/
+@media screen and (min-width: 1920px) {
+  .container {
+    width: 90%;
+    margin: 0 auto;
+    background-color: var(--blog-bgc);
+    flex: 1 0 auto;
+  }
+
+  .nav-menu {
+    color: #2b2b2b;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .nav-menu-mobile {
+    display: none !important;
+  }
+
+  // main-container全局样式
+  .app-container {
+    padding: 10px;
+  }
+}

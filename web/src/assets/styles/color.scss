@@ -1,0 +1,58 @@
+/* Colors Base */
+:root {
+  --nav-bgc-light: #ffffff;
+  --nav-bgc-dark: #3c3c3c;
+
+  --menu-text-color-light: #000000;
+  --menu-text-color-dark: #e5e5e5;
+
+  --list-item-title-color-light: #333333;
+  --list-item-title-color-dark: #e5e5e5;
+
+  --md-bk-color-light: #ffffff;
+  --md-bk-color-dark: #3c3c3c;
+}
+/* Colors Theme */
+:root {
+  --nav-bgc: var(--blog-bgc-light);
+  --menu-text-color: var(--menu-text-color-light);
+  --list-item-title-color: var(--list-item-title-color-light);
+  // --md-bk-color: var(--md-bk-color-light);
+}
+/* Dark Mode Theme */
+.dark {
+  --nav-bgc: var(--blog-bgc-dark);
+  --menu-text-color: var(--menu-text-color-dark);
+  --list-item-title-color: var(--list-item-title-color-dark);
+  // --md-bk-color: var(--md-bk-color-dark);
+}
+
+.header-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: var(--nav-bgc);
+  height: 55px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  /* border-color: #e5e7eb; */
+}
+.menu-item {
+  margin: 0 10px;
+  color: var(--menu-text-color);
+}
+.menu-item:hover {
+  cursor: pointer;
+  color: #42b983;
+}
+.menu-item-bgc {
+  color: #42b983;
+}
+.item-title {
+  font-size: 18px;
+  color: var(--list-item-title-color);
+}
+.item-title:hover {
+  color: #42b983;
+  cursor: pointer;
+}

@@ -1,0 +1,113 @@
+/* Colors Base */
+:root {
+  /* scrollbar colors */
+  --blog-scrollbar-thumb-light: #c1c1c1;
+  --blog-scrollbar-track-light: #ffffff;
+  --blog-scrollbar-thumb-dark: #686868;
+  --blog-scrollbar-track-dark: #3a3a3a;
+
+  --blog-divider-light: #e7e7e7;
+  --blog-divider-dark: #e7e7e7;
+
+  --global-bgc-light: #fcfcfc;
+  --global-bgc-dark: #3a3a3a;
+}
+/* Colors Theme */
+:root {
+  --blog-scrollbar-thumb: var(--blog-scrollbar-thumb-light);
+  --blog-scrollbar-track: var(--blog-scrollbar-track-light);
+  --global-bgc: var(--global-bgc-light);
+}
+/* Dark Mode Theme */
+.dark {
+  --global-bgc: var(--global-bgc-dark);
+  --blog-scrollbar-thumb: var(--blog-scrollbar-thumb-dark);
+  --blog-scrollbar-track: var(--blog-scrollbar-track-dark);
+}
+
+/**
+ * 全局通用样式
+ */
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+}
+html {
+  // height: 100%;
+  // box-sizing: border-box;
+  background-color: var(--global-bgc);
+}
+
+/* mavon-editor 遮住导航栏问题 */
+.v-note-wrapper {
+  z-index: 1 !important;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-thumb {
+  /*滑块部分*/
+  /*border-radius: 5px;*/
+  background-color: var(--blog-scrollbar-thumb);
+}
+::-webkit-scrollbar-track {
+  /*轨道部分*/
+  // box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+  background-color: var(--blog-scrollbar-track);
+  /*border-radius: 5px;*/
+}
+div::-webkit-scrollbar {
+  width: 0;
+}
+
+//解决表格固定列时的压样式问题 element ui
+.el-table__fixed {
+  height: calc(100% - 12px) !important; //这里的12px和上方的/*滚动条高度*/相同
+}
+.el-table__fixed-right {
+  height: calc(100% - 12px) !important;
+}
+.el-table__fixed-right::before,
+.el-table__fixed::before {
+  background-color: unset !important;
+}
+
+.m10 {
+  margin: 10px;
+}
+.ml10 {
+  margin-left: 10px;
+}
+.mr10 {
+  margin-right: 10px;
+}
+.mb10 {
+  margin-bottom: 10px;
+}
+
+.horizontal-divider {
+  display: block;
+  height: 1px;
+  width: 100%;
+  margin: 5px 0;
+  border-bottom: 1px solid var(blog-divider-light);
+}
+
+.tags-container {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.item-tag {
+  margin: 5px 5px 0 0;
+}
