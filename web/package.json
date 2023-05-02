@@ -17,7 +17,6 @@
     "fuse.js": "^6.6.2",
     "js-cookie": "^3.0.5",
     "jsencrypt": "3.3.2",
-    "md-editor-v3": "^3.0.0",
     "nprogress": "^0.2.0",
     "pinia": "^2.0.35",
     "pixi.js": "^7.2.4",
