@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+// 请求
+message MessageReq {
+  string id = 1;
+  string content = 2;
+}
+// 响应
+message MessageResp {
+  string id = 1;
+  int32 code = 2;
+  string content = 3;
+}

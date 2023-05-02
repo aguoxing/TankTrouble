@@ -41,16 +41,46 @@ export const constantRoutes: Array<RouteRecordRaw> = [
   {
     path: '',
     component: GameLayout,
-    redirect: '/tank',
+    redirect: '/index',
     children: [
       {
-        path: '/tank',
+        path: '/index',
         component: () => import('@/views/index.vue'),
+        name: 'Home',
+        meta: { title: 'Home', icon: 'dashboard', affix: true }
+      },
+      {
+        path: '/tank',
+        component: () => import('@/views/game/tank.vue'),
         name: 'TankTrouble',
         meta: { title: 'TankTrouble', icon: 'dashboard', affix: true }
+      },
+      {
+        path: '/tank/online/:roomId',
+        component: () => import('@/views/game/room.vue'),
+        name: 'TankTroubleOnline',
+        meta: { title: 'TankTroubleOnline', icon: 'dashboard', affix: true }
+      },
+      {
+        path: '/tank/local/:gameMode',
+        component: () => import('@/views/game/local.vue'),
+        name: 'TankTroubleLocal',
+        meta: { title: 'TankTroubleLocal', icon: 'dashboard', affix: true }
+      },
+      {
+        path: '/chat',
+        component: () => import('@/views/chat/index.vue'),
+        name: 'chat',
+        meta: { title: 'chat', icon: 'dashboard', affix: true }
+      },
+      {
+        path: '/test',
+        component: () => import('@/views/game/test.vue'),
+        name: 'test',
+        meta: { title: 'test', icon: 'dashboard', affix: true }
       }
     ]
-  },
+  }
 ]
 
 // 动态路由，基于用户权限动态去加载

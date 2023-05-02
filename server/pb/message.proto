@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+// 生成的go文件是哪个目录的包中，.当前目录 server包名
+option go_package = ".;server";
+
+// 请求
+message MessageReq {
+  string id = 1;
+  string content = 2;
+}
+// 响应
+message MessageResp {
+  string id = 1;
+  int32 code = 2;
+  string content = 3;
+}

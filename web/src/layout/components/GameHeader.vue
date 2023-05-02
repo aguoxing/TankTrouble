@@ -58,7 +58,9 @@ export default defineComponent({
   name: 'BlogHeader',
   setup() {
     const navMenus = [
-      { name: i18n.global.t('menu.home'), path: '/tank' }
+      { name: i18n.global.t('menu.home'), path: '/index' },
+      { name: '聊天', path: '/chat' },
+      { name: '测试', path: '/test' }
     ]
 
     const router = useRouter()
@@ -94,6 +96,7 @@ export default defineComponent({
   justify-content: space-between;
   align-items: center;
 }
+
 .nav-logo {
   width: 50px;
   height: 50px;
@@ -101,6 +104,7 @@ export default defineComponent({
   flex-direction: row;
   align-items: center;
 }
+
 .nav-logo:hover {
   cursor: pointer;
 }

@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+// 生成的go文件是哪个目录的包中，.当前目录 server包名
+option go_package = ".;pb";
+
+// 请求
+message GameReq {
+  string roomId = 1;
+  string playerId = 2;
+  string messageType = 3;
+  string messageValue = 4;
+}
+
+// 响应
+message GameResp {
+  string roomId = 1;
+  string playerId = 2;
+  string messageType = 3;
+  string messageValue = 4;
+  MazeMap mazeMap = 5;
+  repeated Tank players = 6;
+}
+
+message MazeMap {
+  string id = 1;
+  int32 width = 2;
+  int32 height = 3;
+  int32 cellSize = 4;
+  string color = 5;
+  int32 wallThickness = 6;
+  repeated Grid grids = 7;
+  map<string, Wall> gridWalls = 8;
+}
+
+message Grid {
+  repeated SubGrid grid = 1;
+}
+
+message SubGrid {
+  int32 X = 1;
+  int32 Y = 2;
+  int32 row = 3;
+  int32 col = 4;
+  bool visited = 5;
+  Walls walls = 6;
+}
+
+message Wall {
+  repeated SubWall wall = 1;
+}
+
+message SubWall {
+  string direction = 1;
+  float centerX = 2;
+  float centerY = 3;
+  int32 width = 4;
+  int32 height = 5;
+}
+
+message Walls {
+  bool Top = 1;
+  bool Bottom = 2;
+  bool Left = 3;
+  bool Right = 4;
+}
+
+message Tank {
+  string   id = 1;
+  string   name = 2;
+  int32    width = 3;
+  int32    height = 4;
+  bool     alive = 5;
+  int32    score = 6;
+  string   color = 7;
+  float  centerX = 8;
+  float  centerY = 9;
+  float  rotation = 10;
+  float speed = 11;
+  int32 bulletNum = 12;
+  repeated Bullet bullets = 13;
+  bool hitWall = 14;
+  float  nextCenterX = 15;
+  float  nextCenterY = 16;
+}
+
+message Bullet {
+  string id = 1;
+  string from = 2;
+  bool firstShoot = 3;
+  string color = 4;
+  float radius = 5;
+  float rotation = 6;
+  float speed = 7;
+  int32 bounces = 8;
+  float  centerX = 9;
+  float  centerY = 10;
+}
+
