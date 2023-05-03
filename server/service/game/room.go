@@ -17,11 +17,11 @@ type Room struct {
 	maxClients int
 }
 
-var RoomModel = new(Room)
+var RoomSrv = new(Room)
 
 var rooms = make(map[string]*Room)
 
-func getOrCreateRoom(roomId string, maxClients int) *Room {
+func (*Room) GetOrCreateRoom(roomId string, maxClients int) *Room {
 	if room, ok := rooms[roomId]; ok {
 		return room
 	} else {

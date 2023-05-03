@@ -8,5 +8,5 @@ import (
 type GameApi struct{}
 
 func (*GameApi) NewGame(ctx *gin.Context) {
-	game.GameSrv.HandleWebSocket(ctx)
+	game.WsSrv.HandleWebSocket(ctx)
 }

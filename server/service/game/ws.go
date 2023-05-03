@@ -19,7 +19,7 @@ var upgrader = websocket.Upgrader{
 
 type Game struct{}
 
-var GameSrv = new(Game)
+var WsSrv = new(Game)
 
 func (*Game) HandleWebSocket(ctx *gin.Context) {
 	roomId := ctx.Param("roomId")
@@ -52,7 +52,7 @@ func (*Game) HandleWebSocket(ctx *gin.Context) {
 	client := ClientSrv.NewClient(playerName, playerId, conn)
 
 	// Join room
-	room := getOrCreateRoom(roomId, 2)
+	room := RoomSrv.GetOrCreateRoom(roomId, 2)
 	client.Room = room
 	err = room.Join(client)
 	if err != nil {
