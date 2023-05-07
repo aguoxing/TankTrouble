@@ -37,14 +37,14 @@ func (*Game) HandleWebSocket(ctx *gin.Context) {
 		return
 	}
 
-	req := &pb.GameReq{}
+	req := &pb.Command{}
 	err2 := proto.Unmarshal(message, req)
 	if err2 != nil {
 		log.Println("err2", err2)
 	}
 	var playerName, playerId string
-	if req.MessageType == "connected" {
-		playerName = req.MessageValue
+	if req.Action == "connected" {
+		playerName = req.Object
 		playerId = req.PlayerId
 	}
 

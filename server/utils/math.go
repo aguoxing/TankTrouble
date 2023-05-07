@@ -31,6 +31,18 @@ type Projection struct {
 	Min float64 `json:"Min"`
 	Max float64 `json:"Max"`
 }
+type Rect struct {
+	X      float64 `json:"x"`
+	Y      float64 `json:"y"`
+	Width  int     `json:"width"`
+	Height int     `json:"height"`
+	Angle  float64 `json:"angle"`
+}
+type Circle struct {
+	X      float64 `json:"x"`
+	Y      float64 `json:"y"`
+	Radius int     `json:"radius"`
+}
 
 // RectRectIsCollide 判断两个 OBB 是否碰撞，它会先计算出两个 OBB 的轴向量（总共有 4 个轴向量），然后分别对每个轴向量计算投影区间，最后判断投影区间是否重叠。
 func RectRectIsCollide(obb1 *Obb, obb2 *Obb) bool {
@@ -95,4 +107,32 @@ func getProjection(obb *Obb, axis *Vector2) *Projection {
 // 判断两个投影区间是否重叠，它只需要判断两个区间的最小值和最大值
 func isOverlap(p1 *Projection, p2 *Projection) bool {
 	return p1.Min <= p2.Max && p1.Max >= p2.Min
+}
+
+func CircleRectOverlap(circle *Circle, rect *Rect) bool {
+	radius := float64(circle.Radius)
+	topLeft := &Vector2{X: circle.X - radius, Y: circle.Y - radius}
+	topRight := &Vector2{X: circle.X + radius, Y: circle.Y - radius}
+	bottomLeft := &Vector2{X: circle.X - radius, Y: circle.Y + radius}
+	bottomRight := &Vector2{X: circle.X + radius, Y: circle.Y + radius}
+	return pointInRect(topLeft, rect) || pointInRect(topRight, rect) || pointInRect(bottomLeft, rect) || pointInRect(bottomRight, rect)
+}
+func rotatePoint(rect *Rect) *Vector2 {
+	rad := rect.Angle * math.Pi / 180
+	cos := math.Cos(rad)
+	sin := math.Sin(rad)
+	res := &Vector2{
+		X: rect.X*cos - rect.Y*sin,
+		Y: rect.X*sin + rect.Y*cos,
+	}
+	return res
+}
+func pointInRect(point *Vector2, rect *Rect) bool {
+	r := &Rect{
+		X:     point.X - rect.X,
+		Y:     point.Y - rect.Y,
+		Angle: -rect.Angle,
+	}
+	p := rotatePoint(r)
+	return p.X >= float64(-rect.Width/2) && p.X <= float64(rect.Width/2) && p.Y >= float64(-rect.Height/2) && p.Y <= float64(rect.Height/2)
 }

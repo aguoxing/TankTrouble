@@ -102,3 +102,12 @@ message Bullet {
   float  centerY = 10;
 }
 
+message Command {
+  string action = 1;
+  string object = 2;
+  string roomId = 3;
+  string playerId = 4;
+  MazeMap mazeMap = 5;
+  Tank player = 6;
+  Bullet bullet = 7;
+}

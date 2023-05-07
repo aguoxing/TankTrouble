@@ -2,10 +2,7 @@ package game
 
 import (
 	"github.com/gorilla/websocket"
-	"google.golang.org/protobuf/proto"
 	"log"
-	"server/model"
-	"server/pb"
 	"sync"
 	"time"
 )
@@ -23,10 +20,6 @@ const (
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
 )
-
-// RunningData Players 临时缓存用 也可用redis
-var RunningData = make(map[string]*pb.GameResp)
-var Players = make(map[string][]*pb.Tank)
 
 type Client struct {
 	ClientId string `json:"ClientId"`
@@ -46,7 +39,7 @@ func (*Client) NewClient(name string, playerId string, conn *websocket.Conn) *Cl
 		ClientId: playerId,
 		Name:     name,
 		Conn:     conn,
-		Messages: make(chan []byte, 4),
+		Messages: make(chan []byte, 100),
 		Quit:     make(chan struct{}), // 初始化 Quit 通道
 	}
 	return client
@@ -78,6 +71,7 @@ func (*Client) ReadMessage(client *Client) {
 	defer func() {
 		client.Room.Leave(client)
 		client.Conn.Close()
+		log.Println("close======r=====")
 	}()
 	client.Conn.SetReadLimit(maxMessageSize)
 	client.Conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -88,7 +82,11 @@ func (*Client) ReadMessage(client *Client) {
 			log.Println(err)
 			break
 		}
-		client.Room.Broadcast(client, message)
+		// 解析读取的指令 生成新的指令并广播
+		CommandSrv.genCommand(client, message)
+
+		//data := CommandSrv.execute(message)
+		//client.Room.Broadcast(client, data)
 	}
 }
 
@@ -97,6 +95,7 @@ func (c *Client) WriteMessage(client *Client) {
 	defer func() {
 		ticker.Stop()
 		client.Conn.Close()
+		log.Println("close======w=====")
 	}()
 	for {
 		select {
@@ -117,8 +116,8 @@ func (c *Client) WriteMessage(client *Client) {
 				return
 			}
 			// 处理数据并写入
-			data := c.handleReceiveData(message)
-			if _, err = w.Write(data); err != nil {
+			//data := c.handleReceiveData(message)
+			if _, err = w.Write(message); err != nil {
 				log.Println("Failed to write message to the client:", err)
 				return
 			}
@@ -135,98 +134,4 @@ func (c *Client) WriteMessage(client *Client) {
 			}
 		}
 	}
-}
-
-// handleReceiveData 处理接收的数据
-func (c *Client) handleReceiveData(data []byte) []byte {
-	decodeData := c.DecodePb(data)
-	var gameResp []byte
-	switch decodeData.MessageType {
-	case "state":
-		gameResp = c.handleStateMessage(decodeData.RoomId, decodeData.MessageValue)
-		break
-	case "move":
-		log.Println("move")
-		gameResp = c.handleMoveMessage(decodeData.RoomId, decodeData.PlayerId, decodeData.MessageValue)
-		break
-	case "Fire":
-		log.Println("Fire")
-		break
-	case "Chat":
-		gameResp1 := &pb.GameResp{
-			MessageType:  decodeData.MessageType,
-			MessageValue: decodeData.MessageValue,
-		}
-		gameResp = c.EncodePb(gameResp1)
-		break
-	}
-
-	return gameResp
-}
-
-func (c *Client) handleStateMessage(roomId string, stateVal string) []byte {
-	if stateVal == "start" {
-		return c.EncodePb(getRunningData(roomId, stateVal))
-	}
-	return nil
-}
-
-func (c *Client) handleMoveMessage(roomId string, playerId string, stateVal string) []byte {
-	roomData := RunningData[roomId]
-	playerData := roomData.Players
-	for _, player := range playerData {
-		if player.Id == playerId {
-			model.TankModel.GetNextPosition(roomData.MazeMap, player, stateVal)
-		}
-	}
-	gameResp := &pb.GameResp{
-		MessageType:  "move",
-		MessageValue: "update",
-		Players:      Players[roomId],
-	}
-	return c.EncodePb(gameResp)
-}
-
-func getRunningData(roomId string, stateVal string) *pb.GameResp {
-	if d, ok := RunningData[roomId]; ok {
-		return d
-	} else {
-		mazeMap := model.MazeModel.NewMazeMap(850, 550, 100, "4d4d4d", 6)
-
-		gameResp := &pb.GameResp{
-			MessageType:  "state",
-			MessageValue: "run",
-			MazeMap:      mazeMap,
-			Players:      Players[roomId],
-		}
-		// 生成地图后生成玩家随机位置
-		for _, player := range gameResp.Players {
-			position := model.TankModel.GetPosition(mazeMap)
-			player.CenterX = position.X
-			player.CenterY = position.Y
-		}
-		RunningData[roomId] = gameResp
-		return gameResp
-	}
-}
-
-func (*Client) DecodePb(msg []byte) *pb.GameReq {
-	// 接收数据 使用protobuf 解码
-	req := &pb.GameReq{}
-	err2 := proto.Unmarshal(msg, req)
-	if err2 != nil {
-		log.Println("err2", err2)
-		return nil
-	}
-	return req
-}
-
-func (*Client) EncodePb(msg *pb.GameResp) []byte {
-	// 回复消息 使用protobuf 编码
-	respPb, err3 := proto.Marshal(msg)
-	if err3 != nil {
-		log.Println("err3", err3)
-		return nil
-	}
-	return respPb
 }

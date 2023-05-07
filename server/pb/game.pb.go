@@ -963,6 +963,101 @@ func (x *Bullet) GetCenterY() float32 {
 	return 0
 }
 
+type Command struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Action   string   `protobuf:"bytes,1,opt,name=action,proto3" json:"action"`
+	Object   string   `protobuf:"bytes,2,opt,name=object,proto3" json:"object"`
+	RoomId   string   `protobuf:"bytes,3,opt,name=roomId,proto3" json:"roomId"`
+	PlayerId string   `protobuf:"bytes,4,opt,name=playerId,proto3" json:"playerId"`
+	MazeMap  *MazeMap `protobuf:"bytes,5,opt,name=mazeMap,proto3" json:"mazeMap,omitempty"`
+	Player   *Tank    `protobuf:"bytes,6,opt,name=player,proto3" json:"player,omitempty"`
+	Bullet   *Bullet  `protobuf:"bytes,7,opt,name=bullet,proto3" json:"bullet,omitempty"`
+}
+
+func (x *Command) Reset() {
+	*x = Command{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_game_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Command) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Command) ProtoMessage() {}
+
+func (x *Command) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Command.ProtoReflect.Descriptor instead.
+func (*Command) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *Command) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *Command) GetObject() string {
+	if x != nil {
+		return x.Object
+	}
+	return ""
+}
+
+func (x *Command) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+func (x *Command) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *Command) GetMazeMap() *MazeMap {
+	if x != nil {
+		return x.MazeMap
+	}
+	return nil
+}
+
+func (x *Command) GetPlayer() *Tank {
+	if x != nil {
+		return x.Player
+	}
+	return nil
+}
+
+func (x *Command) GetBullet() *Bullet {
+	if x != nil {
+		return x.Bullet
+	}
+	return nil
+}
+
 var File_game_proto protoreflect.FileDescriptor
 
 var file_game_proto_rawDesc = []byte{
@@ -1083,8 +1178,21 @@ var file_game_proto_rawDesc = []byte{
 	0x6e, 0x63, 0x65, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x58, 0x18,
 	0x09, 0x20, 0x01, 0x28, 0x02, 0x52, 0x07, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x58, 0x12, 0x18,
 	0x0a, 0x07, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x59, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x02, 0x52,
-	0x07, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x59, 0x42, 0x06, 0x5a, 0x04, 0x2e, 0x3b, 0x70, 0x62,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x07, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x59, 0x22, 0xd1, 0x01, 0x0a, 0x07, 0x43, 0x6f, 0x6d,
+	0x6d, 0x61, 0x6e, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x0a, 0x06,
+	0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x6f, 0x62,
+	0x6a, 0x65, 0x63, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x6f, 0x6f, 0x6d, 0x49, 0x64, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x72, 0x6f, 0x6f, 0x6d, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08,
+	0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x49, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
+	0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x49, 0x64, 0x12, 0x22, 0x0a, 0x07, 0x6d, 0x61, 0x7a, 0x65,
+	0x4d, 0x61, 0x70, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x08, 0x2e, 0x4d, 0x61, 0x7a, 0x65,
+	0x4d, 0x61, 0x70, 0x52, 0x07, 0x6d, 0x61, 0x7a, 0x65, 0x4d, 0x61, 0x70, 0x12, 0x1d, 0x0a, 0x06,
+	0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x05, 0x2e, 0x54,
+	0x61, 0x6e, 0x6b, 0x52, 0x06, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x12, 0x1f, 0x0a, 0x06, 0x62,
+	0x75, 0x6c, 0x6c, 0x65, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x07, 0x2e, 0x42, 0x75,
+	0x6c, 0x6c, 0x65, 0x74, 0x52, 0x06, 0x62, 0x75, 0x6c, 0x6c, 0x65, 0x74, 0x42, 0x06, 0x5a, 0x04,
+	0x2e, 0x3b, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1099,7 +1207,7 @@ func file_game_proto_rawDescGZIP() []byte {
 	return file_game_proto_rawDescData
 }
 
-var file_game_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_game_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_game_proto_goTypes = []interface{}{
 	(*GameReq)(nil),  // 0: GameReq
 	(*GameResp)(nil), // 1: GameResp
@@ -1112,25 +1220,29 @@ var file_game_proto_goTypes = []interface{}{
 	(*Cells)(nil),    // 8: Cells
 	(*Tank)(nil),     // 9: Tank
 	(*Bullet)(nil),   // 10: Bullet
-	nil,              // 11: MazeMap.GridWallsEntry
+	(*Command)(nil),  // 11: Command
+	nil,              // 12: MazeMap.GridWallsEntry
 }
 var file_game_proto_depIdxs = []int32{
 	2,  // 0: GameResp.mazeMap:type_name -> MazeMap
 	9,  // 1: GameResp.players:type_name -> Tank
 	3,  // 2: MazeMap.grids:type_name -> Grid
-	11, // 3: MazeMap.gridWalls:type_name -> MazeMap.GridWallsEntry
+	12, // 3: MazeMap.gridWalls:type_name -> MazeMap.GridWallsEntry
 	4,  // 4: Grid.grid:type_name -> SubGrid
 	7,  // 5: SubGrid.walls:type_name -> Walls
 	6,  // 6: Wall.wall:type_name -> SubWall
 	4,  // 7: Cells.cell1:type_name -> SubGrid
 	4,  // 8: Cells.cell2:type_name -> SubGrid
 	10, // 9: Tank.bullets:type_name -> Bullet
-	5,  // 10: MazeMap.GridWallsEntry.value:type_name -> Wall
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	2,  // 10: Command.mazeMap:type_name -> MazeMap
+	9,  // 11: Command.player:type_name -> Tank
+	10, // 12: Command.bullet:type_name -> Bullet
+	5,  // 13: MazeMap.GridWallsEntry.value:type_name -> Wall
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_game_proto_init() }
@@ -1271,6 +1383,18 @@ func file_game_proto_init() {
 				return nil
 			}
 		}
+		file_game_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Command); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1278,7 +1402,7 @@ func file_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_game_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -40,9 +40,9 @@ func (room *Room) Join(client *Client) error {
 	room.mutex.Lock()
 	defer room.mutex.Unlock()
 	if len(room.Clients) >= room.maxClients {
-		msg := client.EncodePb(&pb.GameResp{
-			MessageType:  "notice",
-			MessageValue: "room is full",
+		msg := CommandSrv.EncodeCommand(&pb.Command{
+			Action: "notice",
+			Object: "room is full",
 		})
 		client.Messages <- msg
 		return fmt.Errorf("room is full")
@@ -50,10 +50,10 @@ func (room *Room) Join(client *Client) error {
 	room.Clients[client] = true
 	for c := range room.Clients {
 		if c != client {
-			log.Println(fmt.Sprintf("%s joined the room[%s]", client.Name, room.Name))
-			msg := c.EncodePb(&pb.GameResp{
-				MessageType:  "notice",
-				MessageValue: fmt.Sprintf("%s joined the room[%s]", client.Name, room.Name),
+			log.Println(fmt.Sprintf("%s joined the room[%s]", client.Name, client.Room.Name))
+			msg := CommandSrv.EncodeCommand(&pb.Command{
+				Action: "notice",
+				Object: fmt.Sprintf("%s joined the room[%s]", client.Name, client.Room.Name),
 			})
 			c.Messages <- msg
 		}
@@ -67,7 +67,7 @@ func (room *Room) Join(client *Client) error {
 		color = "0x00ff00"
 	}
 	player := model.TankModel.NewTank(client.ClientId, client.Name, color)
-	Players[room.RoomId] = append(Players[room.RoomId], player)
+	model.Players[client.Room.RoomId] = append(model.Players[client.Room.RoomId], player)
 	return nil
 }
 
@@ -78,9 +78,9 @@ func (room *Room) Leave(client *Client) {
 		delete(room.Clients, client)
 		log.Println(fmt.Sprintf("%s leave the room", client.Name))
 		for c := range room.Clients {
-			msg := c.EncodePb(&pb.GameResp{
-				MessageType:  "notice",
-				MessageValue: fmt.Sprintf("%s leave the room[%s]", client.Name, room.Name),
+			msg := CommandSrv.EncodeCommand(&pb.Command{
+				Action: "notice",
+				Object: fmt.Sprintf("%s leave the room[%s]", client.Name, room.RoomId),
 			})
 			c.Messages <- msg
 		}
@@ -89,8 +89,8 @@ func (room *Room) Leave(client *Client) {
 			delete(rooms, room.RoomId)
 			// 删除房间游戏数据
 			log.Println(fmt.Sprintf("delete the room[%s] game data", room.Name))
-			delete(RunningData, room.RoomId)
-			delete(Players, room.RoomId)
+			delete(model.MazeMap, room.RoomId)
+			delete(model.Players, room.RoomId)
 		}
 	}
 }
@@ -105,8 +105,9 @@ func (room *Room) Broadcast(sender *Client, message []byte) {
 		//if client != sender {
 		select {
 		case client.Messages <- message:
+			log.Println("广播...")
 		case <-timeout.C:
-			log.Println("读取超时...关闭连接...")
+			log.Println(client.Name, "-读取超时...关闭连接...")
 			close(client.Messages)
 			delete(room.Clients, client)
 			//default:

@@ -2,16 +2,22 @@ package model
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"server/model/response"
 	"server/pb"
 	"server/utils"
+	"time"
 )
 
 type Tank struct{}
 
 var TankModel = new(Tank)
+
+var Players = make(map[string][]*pb.Tank)
+
+var lastShootTime time.Time
 
 func (*Tank) NewTank(id string, name string, color string) *pb.Tank {
 	tank := &pb.Tank{
@@ -28,6 +34,7 @@ func (*Tank) NewTank(id string, name string, color string) *pb.Tank {
 		BulletNum: 5,
 		HitWall:   false,
 		Speed:     3,
+		Bullets:   make([]*pb.Bullet, 0),
 	}
 	return tank
 }
@@ -40,15 +47,17 @@ func (*Tank) GetPosition(maze *pb.MazeMap) *response.Position {
 	cols := maze.Width / maze.CellSize
 	rows := maze.Height / maze.CellSize
 
-	x := float32(randomX)*float32(cols)*float32(maze.CellSize) + (float32(random)+float32(maze.CellSize))/2
-	y := float32(randomY)*float32(rows)*float32(maze.CellSize) + (float32(random)+float32(maze.CellSize))/2
+	x := float32(math.Floor(randomX*float64(cols)))*float32(maze.CellSize) + (float32(random)+float32(maze.CellSize))/2
+	y := float32(math.Floor(randomY*float64(rows)))*float32(maze.CellSize) + (float32(random)+float32(maze.CellSize))/2
 
 	return &response.Position{X: x, Y: y}
 }
 
-func (t *Tank) GetNextPosition(maze *pb.MazeMap, tank *pb.Tank, key string) {
+func (t *Tank) UpdatePosition(maze *pb.MazeMap, tank *pb.Tank, key string) {
 	if key == "MoveForward" {
+		log.Println(fmt.Sprintf("---id: %s,x: %f,y: %f,r: %f", tank.Id, tank.CenterX, tank.CenterY, tank.Rotation))
 		t.MoveForward(maze, tank)
+		log.Println(fmt.Sprintf("+++id: %s,x: %f,y: %f,r: %f", tank.Id, tank.CenterX, tank.CenterY, tank.Rotation))
 	}
 	if key == "MoveBackward" {
 		t.MoveBackward(maze, tank)
@@ -84,15 +93,15 @@ func (*Tank) MoveBackward(maze *pb.MazeMap, tank *pb.Tank) {
 	oldY := tank.CenterY
 	vx := math.Sin(float64(tank.Rotation))
 	vy := -math.Cos(float64(tank.Rotation))
-	nextX := tank.CenterX - float32(vx)*tank.Speed
-	nextY := tank.CenterY - float32(vy)*tank.Speed
+	tank.NextCenterX = tank.CenterX - float32(vx)*tank.Speed
+	tank.NextCenterY = tank.CenterY - float32(vy)*tank.Speed
 	if isCollisionWall(maze, tank) {
 		tank.HitWall = true
 		tank.CenterX = oldX
 		tank.CenterY = oldY
 	} else {
-		tank.CenterX = nextX
-		tank.CenterY = nextY
+		tank.CenterX = tank.NextCenterX
+		tank.CenterY = tank.NextCenterY
 		tank.HitWall = false
 	}
 }
@@ -121,8 +130,30 @@ func (*Tank) RotateRight(tank *pb.Tank) {
 	// }
 }
 
-func (*Tank) Fire() {
+func (*Tank) Fire(tank *pb.Tank) *pb.Bullet {
+	// 计算当前时间和上一次发射子弹的时间间隔
+	currentTime := time.Now()
+	if time.Since(lastShootTime) >= 200*time.Millisecond {
+		lastShootTime = currentTime
+		if tank.Alive && tank.BulletNum > 0 {
+			bullet := BulletModel.NewBullet(tank.Id, tank.CenterX, tank.CenterY)
+			tank.Bullets = append(tank.Bullets, bullet)
+			tank.BulletNum--
+			return bullet
+		}
+	}
+	return nil
+}
 
+// 删除指定下标的元素
+func removeElement(arr []*pb.Bullet, index int) []*pb.Bullet {
+	// 判断下标是否越界
+	if index < 0 || index >= len(arr) {
+		return arr
+	}
+
+	// 使用切片删除元素
+	return append(arr[:index], arr[index+1:]...)
 }
 
 func isCollisionWall(maze *pb.MazeMap, tank *pb.Tank) bool {
@@ -133,8 +164,8 @@ func isCollisionWall(maze *pb.MazeMap, tank *pb.Tank) bool {
 		Angle:    float64(tank.Rotation),
 	}
 	cellSize := float32(maze.CellSize)
-	gridRow := math.Floor(float64(tank.NextCenterX / cellSize))
-	gridCol := math.Floor(float64(tank.NextCenterY / cellSize))
+	gridRow := math.Floor(float64(tank.NextCenterY / cellSize))
+	gridCol := math.Floor(float64(tank.NextCenterX / cellSize))
 
 	key := fmt.Sprintf("%d%d", int(gridRow), int(gridCol))
 	walls := gridWallsMap[key]

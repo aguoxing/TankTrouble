@@ -10,6 +10,8 @@ type Maze struct{}
 
 var MazeModel = new(Maze)
 
+var MazeMap = make(map[string]*pb.MazeMap)
+
 func (*Maze) NewMazeMap(width int, height int, cellSize int, color string, wallThickness int) *pb.MazeMap {
 	data := utils.GeneratePrimMaze(width, height, cellSize)
 	// 转换成与pb一样的格式
@@ -133,4 +135,13 @@ func getNeighbors(row int, col int, grids [][]*pb.SubGrid) []*pb.SubGrid {
 	}
 
 	return neighbors
+}
+
+func (m *Maze) GetMazeMap(roomId string) *pb.MazeMap {
+	if mazeMap, ok := MazeMap[roomId]; ok {
+		return mazeMap
+	} else {
+		mazeMap = m.NewMazeMap(850, 550, 100, "4d4d4d", 6)
+		return mazeMap
+	}
 }
