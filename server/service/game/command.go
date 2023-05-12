@@ -16,111 +16,154 @@ func (c *Command) genCommand(client *Client, message []byte) {
 	mazeMap := model.MazeModel.GetMazeMap(command.RoomId)
 	players := model.Players[command.RoomId]
 
-	log.Println(command.Action, "==================", command.Object)
-	if command.Action == "ping" {
-		client.Room.Broadcast(client, message)
+	if command.MsgKey == "ping" {
+		//client.Room.Broadcast(client, message)
+		client.Room.BroadcastMessages <- message
 	}
-	if command.Action == "start" {
+	if command.MsgKey == "game" && command.MsgVal == "start" {
 		// 生成地图
 		mazeMapMessage := &pb.Command{
-			Action:  "initMap",
-			Object:  "mazeMap",
+			MsgKey:  "initMap",
+			MsgVal:  "mazeMap",
 			RoomId:  command.RoomId,
 			MazeMap: mazeMap,
 		}
 		log.Println("initMap...")
-		client.Room.Broadcast(client, c.EncodeCommand(mazeMapMessage))
+		//client.Room.Broadcast(client, c.EncodeCommand(mazeMapMessage))
+		client.Room.BroadcastMessages <- c.EncodeCommand(mazeMapMessage)
 		// 生成玩家
 		for _, player := range players {
 			position := model.TankModel.GetPosition(mazeMap)
 			player.CenterX = position.X
 			player.CenterY = position.Y
 			playerMessage := &pb.Command{
-				Action:   "initPlayer",
-				Object:   "player",
+				MsgKey:   "initPlayer",
+				MsgVal:   "player",
 				RoomId:   command.RoomId,
 				PlayerId: player.Id,
 				Player:   player,
 			}
 			log.Println("initPlayer...")
-			client.Room.Broadcast(client, c.EncodeCommand(playerMessage))
+			//client.Room.Broadcast(client, c.EncodeCommand(playerMessage))
+			client.Room.BroadcastMessages <- c.EncodeCommand(playerMessage)
 		}
 		// 开始
 		runMessage := &pb.Command{
-			Action:   "run",
-			Object:   "game",
+			MsgKey:   "game",
+			MsgVal:   "run",
 			RoomId:   command.RoomId,
 			PlayerId: client.ClientId,
 		}
 		log.Println("run...")
-		client.Room.Broadcast(client, c.EncodeCommand(runMessage))
+		//client.Room.Broadcast(client, c.EncodeCommand(runMessage))
+		client.Room.BroadcastMessages <- c.EncodeCommand(runMessage)
 	}
-	if command.Action == "restart" {
+	if command.MsgKey == "chat" {
+		//client.Room.Broadcast(client, message)
+		client.Room.BroadcastMessages <- message
 	}
-	if command.Action == "move" {
-		for _, player := range players {
-			if player.Id == client.ClientId {
-				model.TankModel.UpdatePosition(mazeMap, player, command.Object)
-				playerMoveMessage := &pb.Command{
-					Action:   "updatePlayer",
-					Object:   "player",
-					RoomId:   command.RoomId,
+
+	if command.MoveStatus == 1 {
+		c.move(client, mazeMap, players, command.IsMoveForward, command.IsMoveBackward, command.IsRotateLeft, command.IsRotateRight)
+	}
+	if command.IsFire == 1 {
+		c.fire(client, players)
+	}
+}
+
+func (c *Command) move(client *Client, mazeMap *pb.MazeMap, players []*pb.Tank, isMoveForward int32, isMoveBackward int32, isRotateLeft int32, isRotateRight int32) {
+	roomId := client.Room.RoomId
+	for _, player := range players {
+		if player.Id == client.ClientId {
+			model.TankModel.UpdatePosition(mazeMap, player, isMoveForward, isMoveBackward, isRotateLeft, isRotateRight)
+			c.updateBullets(client, mazeMap, players, player)
+			playerMoveMessage := &pb.Command{
+				MsgKey:   "update",
+				MsgVal:   "player",
+				RoomId:   roomId,
+				PlayerId: player.Id,
+				Player:   player,
+			}
+			//client.Room.Broadcast(client, c.EncodeCommand(playerMoveMessage))
+			client.Room.BroadcastMessages <- c.EncodeCommand(playerMoveMessage)
+			break
+		}
+	}
+}
+
+func (c *Command) fire(client *Client, players []*pb.Tank) {
+	roomId := client.Room.RoomId
+	for _, player := range players {
+		if player.Id == client.ClientId {
+			bullet := model.TankModel.Fire(player)
+			if bullet != nil {
+				playerFireMessage := &pb.Command{
+					MsgKey:   "fire",
+					MsgVal:   "bullet",
+					RoomId:   roomId,
 					PlayerId: player.Id,
-					Player:   player,
+					Bullet:   bullet,
 				}
-				client.Room.Broadcast(client, c.EncodeCommand(playerMoveMessage))
+				//client.Room.Broadcast(client, c.EncodeCommand(playerFireMessage))
+				client.Room.BroadcastMessages <- c.EncodeCommand(playerFireMessage)
 			}
 		}
 	}
-	if command.Action == "fire" {
-		for _, player := range players {
-			if player.Id == client.ClientId {
-				bullet := model.TankModel.Fire(player)
-				if bullet != nil {
-					playerFireMessage := &pb.Command{
-						Action:   "fire",
-						Object:   "bullet",
-						RoomId:   command.RoomId,
-						PlayerId: player.Id,
-						Bullet:   bullet,
-					}
-					client.Room.Broadcast(client, c.EncodeCommand(playerFireMessage))
+}
+
+func (c *Command) updateBullets(client *Client, mazeMap *pb.MazeMap, players []*pb.Tank, player *pb.Tank) {
+	roomId := client.Room.RoomId
+	if player.Id == client.ClientId {
+		bullets := player.Bullets
+		for i, bullet := range bullets {
+			isOver := model.BulletModel.UpdateBullet(i, mazeMap, player, bullet, roomId)
+			if isOver {
+				restartMessage := &pb.Command{
+					MsgKey: "game",
+					MsgVal: "restart",
+					RoomId: roomId,
 				}
+				log.Println("restartMessage===========")
+				//client.Room.Broadcast(client, c.EncodeCommand(restartMessage))
+				client.Room.BroadcastMessages <- c.EncodeCommand(restartMessage)
+				c.restart(client, players)
 			}
 		}
 	}
-	if command.Action == "updateBullets" {
-		for _, player := range players {
-			if player.Id == client.ClientId {
-				bullets := player.Bullets
-				for i, bullet := range bullets {
-					isOver := model.BulletModel.UpdateBullet(i, mazeMap, player, bullet, command.RoomId)
-					if isOver {
-						restartMessage := &pb.Command{
-							Action:   "restart",
-							Object:   "game",
-							RoomId:   command.RoomId,
-							PlayerId: player.Id,
-						}
-						log.Println("restart===========")
-						client.Room.Broadcast(client, c.EncodeCommand(restartMessage))
-					} else {
-						updateBulletMessage := &pb.Command{
-							Action:   "updateBullet",
-							Object:   "bullet",
-							RoomId:   command.RoomId,
-							PlayerId: player.Id,
-							Bullet:   bullet,
-						}
-						log.Println("updateBullet===========", bullet)
-						client.Room.Broadcast(client, c.EncodeCommand(updateBulletMessage))
-					}
-				}
-			}
-		}
+}
+
+func (c *Command) restart(client *Client, players []*pb.Tank) {
+	roomId := client.Room.RoomId
+	model.MazeModel.ResetMazeMap(roomId)
+	mazeMap := model.MazeModel.GetMazeMap(roomId)
+	// 生成地图
+	mazeMapMessage := &pb.Command{
+		MsgKey:  "initMap",
+		MsgVal:  "mazeMap",
+		RoomId:  roomId,
+		MazeMap: mazeMap,
 	}
-	if command.Action == "chat" {
-		client.Room.Broadcast(client, message)
+	log.Println("initMap...")
+	//client.Room.Broadcast(client, c.EncodeCommand(mazeMapMessage))
+	client.Room.BroadcastMessages <- c.EncodeCommand(mazeMapMessage)
+	// 生成玩家
+	for _, player := range players {
+		position := model.TankModel.GetPosition(mazeMap)
+		player.CenterX = position.X
+		player.CenterY = position.Y
+		player.Alive = true
+		player.BulletNum = 5
+		player.Bullets = make([]*pb.Bullet, 0)
+		playerMessage := &pb.Command{
+			MsgKey:   "initPlayer",
+			MsgVal:   "player",
+			RoomId:   roomId,
+			PlayerId: player.Id,
+			Player:   player,
+		}
+		log.Println("initPlayer...")
+		//client.Room.Broadcast(client, c.EncodeCommand(playerMessage))
+		client.Room.BroadcastMessages <- c.EncodeCommand(playerMessage)
 	}
 }
 

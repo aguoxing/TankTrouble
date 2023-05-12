@@ -1,5 +1,5 @@
-import { MazeMap, Player } from '@/types/game/online'
 import * as PIXI from 'pixi.js'
+import { Bullet, MazeMap, Tank } from '../proto/game'
 
 export function drawMazeMap(mazeMap: MazeMap) {
   const wallsContainer = new PIXI.Container()
@@ -46,14 +46,14 @@ export function drawMazeMap(mazeMap: MazeMap) {
       }
 
       // 水平
-      const hw = mazeMap.cellSize + mazeMap.wallThickness / 2
+      const hw = mazeMap.cellSize + mazeMap.wallThickness
       const hh = mazeMap.wallThickness
       const hx = cell.X + hw / 2
       const hy = cell.Y + hh / 2
 
       // 垂直
       const vw = mazeMap.wallThickness
-      const vh = mazeMap.cellSize + mazeMap.wallThickness / 2
+      const vh = mazeMap.cellSize + mazeMap.wallThickness 
       const vx = cell.X + vw / 2
       const vy = cell.Y + vh / 2
 
@@ -104,7 +104,7 @@ export function drawMazeMap(mazeMap: MazeMap) {
   return wallsContainer
 }
 
-export function drawPlayer(player: Player) {
+export function drawPlayer(player: Tank) {
   const tankGraphics = new PIXI.Graphics()
 
   tankGraphics.lineStyle(1, 0x000000, 1) // 边框
@@ -131,4 +131,14 @@ export function drawPlayer(player: Player) {
   tankGraphics.rotation = player.rotation
   tankGraphics.position.set(player.centerX, player.centerY)
   return tankGraphics
+}
+
+export function drawBullet(bullet: Bullet) {
+  const bulletGraphics = new PIXI.Graphics()
+  bulletGraphics.beginFill(bullet.color)
+  bulletGraphics.drawCircle(0, 0, bullet.radius)
+  bulletGraphics.endFill()
+  bulletGraphics.position.set(bullet.centerX, bullet.centerY)
+  bulletGraphics.rotation = bullet.rotation
+  return bulletGraphics
 }

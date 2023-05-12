@@ -6,16 +6,12 @@
       </div> -->
       <el-button @click="handleStartGame">开始游戏</el-button>
     </div>
-    <div v-if="state === 'start'">
-      <online :roomId="roomId" :playerId="playerId" :state="state" :maze-map="mazeMap" :players="players" @handleSendMessage="handleSendMessage" />
-    </div>
+    <online :command="commandModel" @handleSendMessage="handleSendMessage" @showScene="showScene" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { decodeGameResp, encodeGameReq } from '@/game/proto/game'
-import { generateRandomCode } from '@/game/tank/math'
-import { MazeMap, Player } from '@/types/game/online'
+import { decodeCommand, encodeCommand } from '@/game/proto/game'
 import { useWebSocket } from '@vueuse/core'
 
 const storage = localStorage.getItem('online-game')
@@ -24,65 +20,66 @@ const storageJson = JSON.parse(storage)
 const route = useRoute()
 
 const roomId = String(route.params.roomId)
-const playerId = generateRandomCode(8)
 const state = ref('wait')
-const mazeMap = ref<MazeMap>()
-const players = ref<Player[]>()
+const commandModel = ref()
 
+const pingMsg = {
+  action: "ping",
+  actionStatus: "ws"
+}
 const wsUrl = 'ws://localhost:8089/game/tank/' + roomId
 const { data, status, close, open, send, ws } = useWebSocket(wsUrl, {
+  // heartbeat: {
+  //   message: encodeCommand(pingMsg),
+  //   interval: 100,
+  //   pongTimeout: 100,
+  // },
   onConnected: ws => {
     ws.binaryType = 'arraybuffer'
     console.log('connected...')
-    const connectedMsg = {
-      roomId: String(roomId),
-      playerId: playerId,
-      messageType: 'connected',
-      messageValue: storageJson.playerName
+    const command = {
+      msgKey: "connected",
+      msgVal: storageJson.playerName,
+      roomId: roomId,
+      playerId: storageJson.playerId
     }
-    send(encodeGameReq(connectedMsg))
+    send(encodeCommand(command))
+  },
+  onDisconnected: () => {
+    console.log('disconnected...')
   },
   onMessage: () => {
-    handleReceiveData()
+    const command = decodeCommand(new Uint8Array(data.value))
+    commandModel.value = command
   }
 })
 
-const handleReceiveData = () => {
-  const buffer = new Uint8Array(data.value)
-  const decodeData = decodeGameResp(buffer)
-  switch (decodeData.messageType) {
-    case 'Join':
-      // playerList.value.push(decodeData.messageValue)
-      break
-    case 'state':
-      if (decodeData.messageValue === 'run') {
-        state.value = 'start'
-        mazeMap.value = decodeData.mazeMap
-        players.value = decodeData.players
-      }
-      break
-    case 'move':
-      players.value = decodeData.players
-      break
-  }
+const showScene = (val: string) => {
+  state.value = val
 }
 
 const handleSendMessage = (data: any) => {
   if (data !== null || data !== undefined) {
-    send(encodeGameReq(data))
+    send(encodeCommand(data))
   }
 }
 
 const handleStartGame = () => {
-  const startMsg = {
+  const command = {
+    msgKey: "game",
+    msgVal: "start",
     roomId: roomId,
-    messageType: 'state',
-    messageValue: 'start'
+    playerId: storageJson.playerId
   }
-  send(encodeGameReq(startMsg))
+  send(encodeCommand(command))
 }
 
-onMounted(() => {})
+onMounted(() => { })
+
+onUnmounted(() => {
+  close()
+})
+
 </script>
 
 <style scoped>

@@ -10,11 +10,12 @@ import (
 )
 
 type Room struct {
-	RoomId     string `json:"roomId"`
-	Name       string `json:"name"`
-	Clients    map[*Client]bool
-	mutex      sync.Mutex // 互斥锁
-	maxClients int
+	RoomId            string `json:"roomId"`
+	Name              string `json:"name"`
+	Clients           map[*Client]bool
+	BroadcastMessages chan []byte
+	mutex             sync.Mutex // 互斥锁
+	maxClients        int
 }
 
 var RoomSrv = new(Room)
@@ -26,10 +27,11 @@ func (*Room) GetOrCreateRoom(roomId string, maxClients int) *Room {
 		return room
 	} else {
 		room = &Room{
-			RoomId:     roomId,
-			Name:       roomId,
-			Clients:    make(map[*Client]bool),
-			maxClients: maxClients,
+			RoomId:            roomId,
+			Name:              roomId,
+			Clients:           make(map[*Client]bool),
+			BroadcastMessages: make(chan []byte, 100),
+			maxClients:        maxClients,
 		}
 		rooms[roomId] = room
 		return room
@@ -39,10 +41,12 @@ func (*Room) GetOrCreateRoom(roomId string, maxClients int) *Room {
 func (room *Room) Join(client *Client) error {
 	room.mutex.Lock()
 	defer room.mutex.Unlock()
+	log.Println("len(room.Clients) >= room.maxClients", len(room.Clients), room.maxClients)
 	if len(room.Clients) >= room.maxClients {
+		log.Println(fmt.Sprintf("room[%s] is full", client.Room.Name))
 		msg := CommandSrv.EncodeCommand(&pb.Command{
-			Action: "notice",
-			Object: "room is full",
+			MsgKey: "notice",
+			MsgVal: "room is full",
 		})
 		client.Messages <- msg
 		return fmt.Errorf("room is full")
@@ -52,8 +56,8 @@ func (room *Room) Join(client *Client) error {
 		if c != client {
 			log.Println(fmt.Sprintf("%s joined the room[%s]", client.Name, client.Room.Name))
 			msg := CommandSrv.EncodeCommand(&pb.Command{
-				Action: "notice",
-				Object: fmt.Sprintf("%s joined the room[%s]", client.Name, client.Room.Name),
+				MsgKey: "notice",
+				MsgVal: fmt.Sprintf("%s joined the room[%s]", client.Name, client.Room.Name),
 			})
 			c.Messages <- msg
 		}
@@ -79,8 +83,8 @@ func (room *Room) Leave(client *Client) {
 		log.Println(fmt.Sprintf("%s leave the room", client.Name))
 		for c := range room.Clients {
 			msg := CommandSrv.EncodeCommand(&pb.Command{
-				Action: "notice",
-				Object: fmt.Sprintf("%s leave the room[%s]", client.Name, room.RoomId),
+				MsgKey: "notice",
+				MsgVal: fmt.Sprintf("%s leave the room[%s]", client.Name, room.RoomId),
 			})
 			c.Messages <- msg
 		}
@@ -115,5 +119,27 @@ func (room *Room) Broadcast(sender *Client, message []byte) {
 			//	delete(room.Clients, client)
 		}
 		//}
+	}
+}
+
+func (room *Room) Broadcast2() {
+	defer func() {
+		log.Println("close==defer================Broadcast2")
+		close(room.BroadcastMessages)
+	}()
+	for {
+		//log.Println("BroadcastMessages===========len=======Broadcast2", len(room.BroadcastMessages))
+		select {
+		case message := <-room.BroadcastMessages:
+			for client := range room.Clients {
+				select {
+				case client.Messages <- message:
+				default:
+					log.Println("close==================Broadcast2")
+					close(client.Messages)
+					delete(room.Clients, client)
+				}
+			}
+		}
 	}
 }

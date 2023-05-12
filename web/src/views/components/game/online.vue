@@ -5,29 +5,26 @@
 </template>
 
 <script lang="ts">
-import { drawPlayer } from '@/game/tank/game'
-import { drawMazeMap } from '@/game/tank/game'
-import { MazeMap, Player } from '@/types/game/online'
+import { Bullet, Command, MazeMap, Tank } from '@/game/proto/game'
+import { drawPlayer, drawMazeMap, drawBullet } from '@/game/tank/game'
+import { keyword } from '@/types/game/online'
 import * as PIXI from 'pixi.js'
 import { PropType } from 'vue'
 
 export default defineComponent({
   name: 'GameScene',
   props: {
+    command: Object as PropType<Command>,
     state: String,
-    mazeMap: Object as PropType<MazeMap>,
-    players: Array as PropType<Player[]>,
-    roomId: String,
-    playerId: String
   },
-  emits: ['update:roomId', 'update:playerId', 'update:mazeMap', 'update:players', 'update:state', 'handleSendMessage'],
+  emits: ['update:command', 'handleSendMessage', 'showScene'],
   setup(props, context) {
     // 初始化场景
-    let pixiApp: PIXI.Application<PIXI.ICanvas>, appContainer: PIXI.Container<PIXI.DisplayObject>
+    let pixiApp: PIXI.Application<PIXI.ICanvas>, appContainer: PIXI.Container<PIXI.DisplayObject>, sceneContainer: PIXI.Container<PIXI.DisplayObject>
     const containerRef = ref()
-    const initPixiApp = () => {
-      const pixiAppWidth = modelMazeMap.value.width
-      const pixiAppHeight = modelMazeMap.value.height
+    const initPixiApp = (mazeMap: any) => {
+      const pixiAppWidth = mazeMap.width
+      const pixiAppHeight = mazeMap.height
       pixiApp = new PIXI.Application({
         width: pixiAppWidth,
         height: pixiAppHeight,
@@ -46,15 +43,21 @@ export default defineComponent({
       // 主容器居中
       appContainer.position.set(pixiAppWidth / 2, pixiAppHeight / 2)
       appContainer.pivot.set((pixiAppWidth - 50) / 2, (pixiAppHeight - 50) / 2)
+
+      // 场景容器
+      sceneContainer = new PIXI.Container()
+      appContainer.addChild(sceneContainer)
     }
 
     // 键盘监听
-    const keys = ref([])
-    const handleKeyDown = (event: { code: string | number }) => {
+    const keys = ref<keyword>({})
+    const handleKeyDown = (event: { code: string }) => {
       keys.value[event.code] = true
+      keydown.value = true
     }
     const handleKeyUp = (event: { code: string | number }) => {
       keys.value[event.code] = false
+      keydown.value = false
     }
     const keywordListener = () => {
       // Handle keyboard input
@@ -62,110 +65,187 @@ export default defineComponent({
       window.addEventListener('keyup', handleKeyUp)
     }
 
-    const roomIdModel = computed({
-      get: () => props.roomId || '',
+    const commandModel = computed({
+      get: () => props.command || '',
       set: val => {
-        context.emit('update:roomId', val)
-      }
-    })
-    const playerIdModel = computed({
-      get: () => props.playerId || '',
-      set: val => {
-        context.emit('update:playerId', val)
-      }
-    })
-    const modelMazeMap = computed({
-      get: () => props.mazeMap || '',
-      set: val => {
-        context.emit('update:mazeMap', val)
-      }
-    })
-    const modelPlayers = computed({
-      get: () => props.players || '',
-      set: val => {
-        context.emit('update:players', val)
-      }
-    })
-    const modelState = computed({
-      get: () => props.state || '',
-      set: val => {
-        context.emit('update:state', val)
+        context.emit('update:command', val)
       }
     })
 
-    const players = ref<PIXI.Graphics[]>([])
-    const draw = () => {
-      const sceneContainer = new PIXI.Container()
-      const mazeMap = drawMazeMap(modelMazeMap.value)
-      sceneContainer.addChild(mazeMap)
-      for (let i = 0; i < modelPlayers.value.length; i++) {
-        const player = drawPlayer(modelPlayers.value[i])
-        players.value.push(player)
-        sceneContainer.addChild(player)
+    const roomId = ref()
+    const playerId = ref()
+    let wallsContainer: PIXI.Container<PIXI.DisplayObject>
+
+    const interpreterCommand = (command: Command) => {
+      // console.log(command);
+
+      if (command.msgKey == "game" && command.msgVal == "restart") {
+        sceneContainer.removeChild(wallsContainer)
+        playersMap.forEach((val, key) => {
+          sceneContainer.removeChild(val)
+        })
+        bulletsMap.forEach((val, key) => {
+          sceneContainer.removeChild(val)
+        })
+        bulletsMap.clear()
       }
-      appContainer.addChild(sceneContainer)
+      if (command.msgKey == "game" && command.msgVal == "run") {
+        roomId.value = command.roomId
+        playerId.value = command.playerId
+        context.emit('showScene', "run")
+      }
+      if (command.msgKey === "initMap") {
+        if (pixiApp === undefined) {
+          initPixiApp(command.mazeMap)
+          pixiTicker()
+        } else {
+          sceneContainer = new PIXI.Container()
+          appContainer.addChild(sceneContainer)
+        }
+        initMap(command.mazeMap)
+      }
+      if (command.msgKey === "initPlayer") {
+        initPlayer(command.player)
+      }
+      if (command.msgKey === "fire") {
+        fire(command.bullet)
+      }
     }
 
-    const send = (val: string) => {
-      const moveMsg = {
-        roomId: String(roomIdModel.value),
-        playerId: playerIdModel.value,
-        messageType: 'move',
-        messageValue: val
-      }
-      context.emit('handleSendMessage', moveMsg)
+    const initMap = (mazeMap: MazeMap) => {
+      wallsContainer = drawMazeMap(mazeMap)
+      sceneContainer.addChild(wallsContainer)
     }
-    const handleMove = (keys: { [keyCode: string]: [v: boolean] }) => {
+    const playersMap = new Map()
+    const initPlayer = (player: Tank) => {
+      const playerGraphics = drawPlayer(player)
+      playersMap.set(player.id, playerGraphics)
+      sceneContainer.addChild(playerGraphics)
+    }
+    const bulletsMap = new Map()
+    const fire = (bullet: Bullet) => {
+      const bulletGraphics = drawBullet(bullet)
+      bulletsMap.set(bullet.id, bulletGraphics)
+      // console.log(bullet);
+      sceneContainer.addChild(bulletGraphics)
+    }
+
+    const send = (moveStatus: number) => {
+      const updateState = {
+        roomId: roomId.value,
+        playerId: playerId.value,
+        moveStatus: moveStatus,
+        isMoveForward: MoveForward.value,
+        isMoveBackward: MoveBackward.value,
+        isRotateLeft: RotateLeft.value,
+        isRotateRight: RotateRight.value,
+        isFire: Fire.value,
+      }
+      context.emit('handleSendMessage', updateState)
+    }
+    const keydown = ref(false)
+    const MoveForward = ref(0)
+    const MoveBackward = ref(0)
+    const RotateLeft = ref(0)
+    const RotateRight = ref(0)
+    const Fire = ref(0)
+    const commandListening = (keys: { [keyCode: string]: boolean }) => {
       if (keys['KeyW']) {
-        send('MoveForward')
-        // console.log("MoveForward");
+        MoveForward.value = 1
+      } else {
+        MoveForward.value = 0
       }
       if (keys['KeyS']) {
-        send('MoveBackward')
-        // console.log("MoveBackward");
+        MoveBackward.value = 1
+      } else {
+        MoveBackward.value = 0
       }
       if (keys['KeyA']) {
-        send('RotateLeft')
-        // console.log("RotateLeft");
+        RotateLeft.value = 1
+      } else {
+        RotateLeft.value = 0
       }
       if (keys['KeyD']) {
-        send('RotateRight')
-        // console.log("RotateRight");
+        RotateRight.value = 1
+      } else {
+        RotateRight.value = 0
       }
       if (keys['KeyQ']) {
-        send('Fire')
+        Fire.value = 1
+      } else {
+        Fire.value = 0
       }
-    }
-    const updateState1 = () => {
-      // console.log(keys.value);
-      handleMove(keys.value)
+      const status = g()
+      send(status)
+      // console.log(MoveForward.value, RotateLeft.value);
     }
 
+    const g = () => {
+      console.log(keydown.value);
+      if (MoveForward.value == 1 || MoveBackward.value == 1 ||
+        RotateLeft.value == 1 || RotateRight.value == 1 ||
+        Fire.value == 1 || bulletsMap.size > 0) {
+        return 1
+      }
+      return 0
+    }
+
+    const updateTankState = (command: Command) => {
+      // 更新玩家位置
+      if (command.msgKey == "update") {
+        const player = command.player
+        if (player !== undefined) {
+          const playerGraphics = playersMap.get(player.id)
+          playerGraphics.x = player.centerX
+          playerGraphics.y = player.centerY
+          playerGraphics.rotation = player.rotation
+          updateBulletState(player)
+        }
+      }
+    }
+
+    const updateBulletState = (player: Tank) => {
+      if (player.bullets !== undefined) {
+        console.log(player.bullets.length, bulletsMap.size);
+
+        for (let i = 0; i < player.bullets.length; i++) {
+          const bullet = player.bullets[i]
+          // 更新子弹位置
+          const bulletGraphics = bulletsMap.get(bullet.id)
+          if (bullet.bounces >= 0) {
+            bulletGraphics.x = bullet.centerX
+            bulletGraphics.y = bullet.centerY
+            bulletGraphics.rotation = bullet.rotation
+          } else {
+            bulletsMap.delete(bullet.id)
+            sceneContainer.removeChild(bulletGraphics)
+          }
+        }
+      }
+    }
     const updateState = () => {
-      pixiApp.ticker.add(updateState1)
+      commandListening(keys.value)
+      updateTankState(commandModel.value)
+    }
+
+    const pixiTicker = () => {
+      pixiApp.ticker.add(updateState)
+      // requestAnimationFrame(pixiTicker);
+      // updateState(1)
     }
 
     // 监听
     watch(
-      () => modelPlayers.value,
+      () => commandModel.value,
       (newValue, oldValue) => {
-        // console.log(newValue);
-        for (let i = 0; i < modelPlayers.value.length; i++) {
-          players.value[i].x = modelPlayers.value[i].centerX
-          players.value[i].y = modelPlayers.value[i].centerY
-          players.value[i].rotation = modelPlayers.value[i].rotation
+        if (commandModel.value.action !== 'ping') {
+          interpreterCommand(commandModel.value)
         }
       }
     )
 
     onMounted(() => {
-      if (modelState.value === 'start') {
-        initPixiApp()
-        keywordListener()
-        console.log(modelMazeMap.value, modelPlayers.value)
-        draw()
-        updateState()
-      }
+      keywordListener()
     })
 
     onUnmounted(() => {

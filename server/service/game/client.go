@@ -40,24 +40,8 @@ func (*Client) NewClient(name string, playerId string, conn *websocket.Conn) *Cl
 		Name:     name,
 		Conn:     conn,
 		Messages: make(chan []byte, 100),
-		Quit:     make(chan struct{}), // 初始化 Quit 通道
 	}
 	return client
-}
-
-func (c *Client) Start() {
-	for {
-		select {
-		case message, ok := <-c.Messages:
-			if !ok {
-				return
-			}
-			c.Room.Broadcast(c, message)
-		case <-c.Quit:
-			close(c.Messages)
-			return
-		}
-	}
 }
 
 // SafeReadMessage 读取并发
@@ -77,7 +61,8 @@ func (*Client) ReadMessage(client *Client) {
 	client.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	client.Conn.SetPongHandler(func(string) error { client.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := safeReadMessage(client)
+		//_, message, err := safeReadMessage(client)
+		_, message, err := client.Conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			break
@@ -85,8 +70,9 @@ func (*Client) ReadMessage(client *Client) {
 		// 解析读取的指令 生成新的指令并广播
 		CommandSrv.genCommand(client, message)
 
-		//data := CommandSrv.execute(message)
-		//client.Room.Broadcast(client, data)
+		//client.Room.Broadcast(client, message)
+		// 上面直接调用Broadcast方法 下面将message写入chan 新开goroutine 调用Broadcast2方法 2选1
+		//client.Room.BroadcastMessages <- message
 	}
 }
 
@@ -110,12 +96,12 @@ func (c *Client) WriteMessage(client *Client) {
 			// 在 Go 中使用 websocket 时，如果同一个客户端同时发送多条消息，可能会导致连接关闭。
 			// 这是因为 websocket 通信是基于帧（frame）的，每一条消息都会被分割成多个帧，而且多条消息之间的帧可以交错发送。
 			// 因此，如果在发送第一条消息的同时发送第二条消息，可能会导致多个帧交错发送，而接收方无法正确解析消息。
-			client.mutex.Lock()
+			//client.mutex.Lock()
 			w, err := client.Conn.NextWriter(websocket.BinaryMessage)
 			if err != nil {
 				return
 			}
-			// 处理数据并写入
+			// 处理数据并写入 这里处理or写入时处理？
 			//data := c.handleReceiveData(message)
 			if _, err = w.Write(message); err != nil {
 				log.Println("Failed to write message to the client:", err)
@@ -126,7 +112,7 @@ func (c *Client) WriteMessage(client *Client) {
 				log.Println("Failed to close the writer:", err)
 				return
 			}
-			client.mutex.Unlock()
+			//client.mutex.Unlock()
 		case <-ticker.C:
 			client.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := client.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {

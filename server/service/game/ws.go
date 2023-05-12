@@ -43,8 +43,8 @@ func (*Game) HandleWebSocket(ctx *gin.Context) {
 		log.Println("err2", err2)
 	}
 	var playerName, playerId string
-	if req.Action == "connected" {
-		playerName = req.Object
+	if req.MsgKey == "connected" {
+		playerName = req.MsgVal
 		playerId = req.PlayerId
 	}
 
@@ -60,11 +60,12 @@ func (*Game) HandleWebSocket(ctx *gin.Context) {
 		return
 	}
 
-	go ClientSrv.Start()
+	// Broadcast
+	go room.Broadcast2()
 
 	// Start goroutine to read messages from client
-	go ClientSrv.ReadMessage(client)
+	go client.ReadMessage(client)
 
 	// Start goroutine to write messages to client
-	go ClientSrv.WriteMessage(client)
+	go client.WriteMessage(client)
 }

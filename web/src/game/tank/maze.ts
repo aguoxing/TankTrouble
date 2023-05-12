@@ -62,14 +62,14 @@ class Maze {
         const cell = row[j]
 
         // 水平
-        const hw = this.cellSize + this.wallThickness / 2
+        const hw = this.cellSize + this.wallThickness
         const hh = this.wallThickness
         const hx = cell.x + hw / 2
         const hy = cell.y + hh / 2
 
         // 垂直
         const vw = this.wallThickness
-        const vh = this.cellSize + this.wallThickness / 2
+        const vh = this.cellSize + this.wallThickness
         const vx = cell.x + vw / 2
         const vy = cell.y + vh / 2
 

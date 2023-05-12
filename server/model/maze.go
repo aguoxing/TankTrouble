@@ -141,7 +141,11 @@ func (m *Maze) GetMazeMap(roomId string) *pb.MazeMap {
 	if mazeMap, ok := MazeMap[roomId]; ok {
 		return mazeMap
 	} else {
-		mazeMap = m.NewMazeMap(850, 550, 100, "4d4d4d", 6)
-		return mazeMap
+		MazeMap[roomId] = m.NewMazeMap(850, 550, 100, "4d4d4d", 6)
+		return MazeMap[roomId]
 	}
+}
+
+func (m *Maze) ResetMazeMap(roomId string) {
+	MazeMap[roomId] = m.NewMazeMap(850, 550, 100, "4d4d4d", 6)
 }

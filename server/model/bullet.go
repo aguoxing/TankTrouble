@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"server/model/response"
 	"server/pb"
@@ -12,7 +13,7 @@ type Bullet struct{}
 
 var BulletModel = new(Bullet)
 
-func (*Bullet) NewBullet(playerId string, centerX float32, centerY float32) *pb.Bullet {
+func (*Bullet) NewBullet(playerId string, centerX float32, centerY float32, rotation float32) *pb.Bullet {
 	bullet := &pb.Bullet{
 		Id:         utils.GenerateRandomCode(8),
 		From:       playerId,
@@ -20,8 +21,8 @@ func (*Bullet) NewBullet(playerId string, centerX float32, centerY float32) *pb.
 		CenterY:    centerY,
 		FirstShoot: true,
 		Color:      "0x000000",
-		Radius:     3,
-		Rotation:   0,
+		Radius:     5,
+		Rotation:   rotation,
 		Speed:      5,
 		Bounces:    20,
 	}
@@ -31,7 +32,7 @@ func (*Bullet) NewBullet(playerId string, centerX float32, centerY float32) *pb.
 func (b *Bullet) UpdateBullet(bulletIndex int, maze *pb.MazeMap, tank *pb.Tank, bullet *pb.Bullet, roomId string) bool {
 	if bullet.Bounces > 0 {
 		bullet.CenterX += float32(math.Sin(float64(bullet.Rotation))) * bullet.Speed
-		bullet.CenterY += float32(-math.Sin(float64(bullet.Rotation))) * bullet.Speed
+		bullet.CenterY += float32(-math.Cos(float64(bullet.Rotation))) * bullet.Speed
 		res := b.bulletIsCollisionWall(maze, bullet)
 		if res.HitWall {
 			if res.WallDirection == "left" || res.WallDirection == "right" {
@@ -41,13 +42,12 @@ func (b *Bullet) UpdateBullet(bulletIndex int, maze *pb.MazeMap, tank *pb.Tank, 
 			}
 			bullet.FirstShoot = false
 			bullet.Bounces--
-
-			// 结束标识
-			return b.bulletIsHitPlayer(tank, bullet, roomId)
 		}
+		// 结束标识
+		return b.bulletIsHitPlayer(tank, bullet, roomId)
 	} else {
-		tank.BulletNum--
-		removeElement(tank.Bullets, bulletIndex)
+		tank.BulletNum++
+		tank.Bullets = removeElement(tank.Bullets, bulletIndex)
 	}
 	return false
 }
@@ -78,6 +78,7 @@ func (*Bullet) bulletIsCollisionWall(maze *pb.MazeMap, bullet *pb.Bullet) *respo
 			Angle:  0,
 		}
 		if utils.CircleRectOverlap(bulletCircle, wallRect) {
+			log.Println("w.Direction==", w.Direction)
 			res.HitWall = true
 			res.WallDirection = w.Direction
 			return res

@@ -97,11 +97,19 @@ message Bullet {
 }
 
 message Command {
-  string action = 1;
-  string object = 2;
+  string msgKey = 1;
+  string msgVal = 2;
   string roomId = 3;
   string playerId = 4;
-  MazeMap mazeMap = 5;
-  Tank player = 6;
-  Bullet bullet = 7;
+  int32 gameStatus = 5;
+  int32 moveStatus = 6;
+  int32 isMoveForward = 7;
+  int32 isMoveBackward = 8;
+  int32 isRotateLeft = 9;
+  int32 isRotateRight = 10;
+  int32 isFire = 11;
+  MazeMap mazeMap = 12;
+  repeated Tank players = 13;
+  Tank player = 14;
+  Bullet bullet = 15;
 }

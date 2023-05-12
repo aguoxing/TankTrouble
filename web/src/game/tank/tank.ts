@@ -166,6 +166,8 @@ class Tank {
     this.tankGraphics.position.set(x, y)
   }
   moveForward(mazeMap: Maze): void {
+    console.log("==="+this.tankGraphics.x+"---"+this.tankGraphics.y);
+
     const oldX = this.tankGraphics.x
     const oldY = this.tankGraphics.y
     this.vx = Math.sin(this.rotation)
@@ -174,13 +176,14 @@ class Tank {
     this.nextY = this.tankGraphics.y + this.vy * this.speed
     if (this.isCollisionWall(mazeMap, this.nextX, this.nextY)) {
       this.hitWall = true
-      this.tankGraphics.x = oldX
-      this.tankGraphics.y = oldY
+      // this.tankGraphics.x = oldX
+      // this.tankGraphics.y = oldY
     } else {
       this.tankGraphics.x = this.nextX
       this.tankGraphics.y = this.nextY
       this.hitWall = false
     }
+    console.log("---"+this.tankGraphics.x+"---"+this.tankGraphics.y);
   }
   moveBackward(mazeMap: Maze): void {
     const oldX = this.tankGraphics.x
@@ -261,6 +264,7 @@ class Tank {
         bulletGraphics.x += Math.sin(bulletGraphics.rotation) * currBullet.speed
         bulletGraphics.y += -Math.cos(bulletGraphics.rotation) * currBullet.speed
         const res = checkBullet3(bulletGraphics, maze)
+
         if (res.hitWall) {
           // 左右 则角度取反  上下 则Math.PI - currBullet.direction
           if (res.wall == 'left' || res.wall == 'right') {
@@ -309,10 +313,12 @@ class Tank {
         y: tankGraphics.y,
         width: tankGraphics.width,
         height: tankGraphics.height,
-        // rotation: tankGraphics.rotation
+        rotation: tankGraphics.rotation,
         angle: tankGraphics.rotation
       }
       if (circleRectOverlap(bulletCircle, playerRect)) {
+        console.log(bulletCircle.from, tankGraphics.name, bulletCircle.firstShoot)
+
         if (bulletCircle.from == tankGraphics.name && bulletCircle.firstShoot) {
           return false
         }

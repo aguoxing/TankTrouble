@@ -53,21 +53,20 @@ func (*Tank) GetPosition(maze *pb.MazeMap) *response.Position {
 	return &response.Position{X: x, Y: y}
 }
 
-func (t *Tank) UpdatePosition(maze *pb.MazeMap, tank *pb.Tank, key string) {
-	if key == "MoveForward" {
-		log.Println(fmt.Sprintf("---id: %s,x: %f,y: %f,r: %f", tank.Id, tank.CenterX, tank.CenterY, tank.Rotation))
+func (t *Tank) UpdatePosition(maze *pb.MazeMap, tank *pb.Tank, isMoveForward int32, isMoveBackward int32, isRotateLeft int32, isRotateRight int32) {
+	if isMoveForward == 1 {
 		t.MoveForward(maze, tank)
-		log.Println(fmt.Sprintf("+++id: %s,x: %f,y: %f,r: %f", tank.Id, tank.CenterX, tank.CenterY, tank.Rotation))
 	}
-	if key == "MoveBackward" {
+	if isMoveBackward == 1 {
 		t.MoveBackward(maze, tank)
 	}
-	if key == "RotateLeft" {
+	if isRotateLeft == 1 {
 		t.RotateLeft(tank)
 	}
-	if key == "RotateRight" {
+	if isRotateRight == 1 {
 		t.RotateRight(tank)
 	}
+	log.Println(fmt.Sprintf("id: %s,x: %f,y: %f,r: %f", tank.Id, tank.CenterX, tank.CenterY, tank.Rotation))
 }
 
 func (*Tank) MoveForward(maze *pb.MazeMap, tank *pb.Tank) {
@@ -136,7 +135,7 @@ func (*Tank) Fire(tank *pb.Tank) *pb.Bullet {
 	if time.Since(lastShootTime) >= 200*time.Millisecond {
 		lastShootTime = currentTime
 		if tank.Alive && tank.BulletNum > 0 {
-			bullet := BulletModel.NewBullet(tank.Id, tank.CenterX, tank.CenterY)
+			bullet := BulletModel.NewBullet(tank.Id, tank.CenterX, tank.CenterY, tank.Rotation)
 			tank.Bullets = append(tank.Bullets, bullet)
 			tank.BulletNum--
 			return bullet

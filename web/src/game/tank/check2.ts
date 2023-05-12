@@ -1,3 +1,4 @@
+import { Circle1, Rect1 } from '@/types/game/tank'
 import Maze from './maze'
 
 type Vector2D = {
@@ -9,12 +10,6 @@ interface OBB {
   center: Vector2D
   halfExtents: Vector2D
   axis: Vector2D[]
-  angle: number
-}
-
-interface Rectangle {
-  center: Vector2D
-  halfExtents: Vector2D
   angle: number
 }
 
@@ -164,7 +159,7 @@ export function check3(tank: any, maze: Maze): boolean {
   const gridCol = Math.floor(tank.nextX / maze.cellSize)
   // console.log(`${tank.nextX},${tank.nextY}`)
   // console.log(`${gridRow},${gridCol}`)
-  console.log(wallsMap.get(`${gridRow},${gridCol}`))
+  // console.log(wallsMap.get(`${gridRow},${gridCol}`))
 
   const walls = wallsMap.get(`${gridRow},${gridCol}`)
   for (let i = 0; i < walls.length; i++) {
@@ -274,19 +269,6 @@ export function rectCircleColliding(rect: Rect, circle: Circle): boolean {
   return false
 }
 
-// 圆与矩形
-interface Rect1 {
-  x: number
-  y: number
-  width: number
-  height: number
-  angle: number
-}
-interface Circle1 {
-  x: number
-  y: number
-  radius: number
-}
 function rotatePoint(x: number, y: number, angle: number) {
   const rad = (angle * Math.PI) / 180
   const cos = Math.cos(rad)
@@ -309,4 +291,46 @@ export function circleRectOverlap(circle: Circle1, rect: Rect1): boolean {
   const bottomRight = { x: x + radius, y: y + radius }
 
   return pointInRect(topLeft, rect) || pointInRect(topRight, rect) || pointInRect(bottomLeft, rect) || pointInRect(bottomRight, rect)
+}
+
+
+export function checkCollision(circle: Circle1, rectangle: Rect1): boolean {
+  // 计算圆心在矩形局部坐标系中的坐标
+  const circleX = circle.x - rectangle.x;
+  const circleY = circle.y - rectangle.y;
+
+  // 计算圆心在矩形局部坐标系中的最近点
+  const closestX = Math.max(rectangle.x, Math.min(circleX, rectangle.x + rectangle.width));
+  const closestY = Math.max(rectangle.y, Math.min(circleY, rectangle.y + rectangle.height));
+
+  // 计算圆心与最近点的距离
+  const distanceX = circleX - closestX;
+  const distanceY = circleY - closestY;
+  const distanceSquared = distanceX * distanceX + distanceY * distanceY;
+
+  console.log("check...");
+
+  // 判断距离是否小于圆的半径的平方，若是则发生碰撞
+  return distanceSquared <= circle.radius * circle.radius;
+}
+
+export function calculateReflection(circle: Circle1, rectangle: Rect1): number {
+  // 计算圆心在矩形局部坐标系中的坐标
+  const circleX = circle.x - rectangle.x;
+  const circleY = circle.y - rectangle.y;
+
+  // 计算圆心与矩形的相对位置关系
+  const relativeX = circleX - rectangle.width / 2;
+  const relativeY = circleY - rectangle.height / 2;
+
+  // 计算碰撞角度
+  const collisionAngle = Math.atan2(relativeY, relativeX);
+
+  // 计算反弹角度
+  const reflectionAngle = Math.PI - collisionAngle;
+
+  // 将反弹角度转换为度数
+  const reflectionAngleDegrees = reflectionAngle * 180 / Math.PI;
+
+  return reflectionAngleDegrees;
 }
